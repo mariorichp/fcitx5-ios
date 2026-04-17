@@ -2,7 +2,7 @@ function(generate_profile keyboard relative_path input_methods)
     set(file_path "${PROJECT_BINARY_DIR}/${relative_path}/profile")
     add_custom_command(
         OUTPUT "${file_path}"
-        COMMAND python scripts/configure.py "${file_path}" ${input_methods}
+        COMMAND python3 scripts/configure.py "${file_path}" ${input_methods}
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
         COMMENT "Generating profile"
     )

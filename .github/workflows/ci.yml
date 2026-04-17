@@ -4,7 +4,9 @@ on:
   push:
     branches:
       - master
+      - ios-16.1-rebase
   pull_request:
+  workflow_dispatch:
 
 jobs:
   lint:

@@ -79,7 +79,7 @@ xcrun actool \
   --notices \
   --warnings \
   --platform iphoneos \
-  --minimum-deployment-target 16.3 \
+  --minimum-deployment-target 16.1 \
   --app-icon AppIcon \
   --output-partial-info-plist build/partial.plist \
   --compile "$ACTOOL_OUT" \
