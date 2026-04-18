@@ -20,6 +20,14 @@ set(CMAKE_CXX_STANDARD 20)
 # fcitx5's translateDomain is only called with integer/string args.
 add_compile_definitions(_LIBCPP_DISABLE_AVAILABILITY)
 
+# The above fixes the compile, but the linker still emits hard references to
+# to_chars(float/double/long double) from the instantiated (but unreachable)
+# formatter templates. On iOS 16.1 those symbols are missing from the system
+# libc++.dylib, so dyld fails to bind and the app crashes on launch. Weak-link
+# libc++: dyld resolves missing symbols to NULL, and since fcitx5 never
+# actually calls the float formatters at runtime, no crash.
+add_link_options("-Wl,-weak-lc++")
+
 set(BUNDLE_IDENTIFIER "org.fcitx.Fcitx5")
 set(BUNDLE_NAME "Fcitx5")
 

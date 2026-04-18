@@ -90,24 +90,30 @@ jobs:
         run: |
           ./scripts/check-validity.sh ${{ matrix.platform }}
 
-      - name: Verify no iOS 16.3+ to_chars(float) leaked
+      - name: Verify iOS 16.3+ to_chars symbols are weak-imported
         if: ${{ matrix.platform == 'OS64' }}
         run: |
           set -e
           APP=build/OS64/src/Release-iphoneos/Fcitx5.app
-          LEAK=0
+          FAIL=0
           while IFS= read -r bin; do
-            if nm -u "$bin" 2>/dev/null | grep -E "to_chars.*[fdelm]NS_12chars_format|_ZNSt3__18to_charsEPcS0_[fde]" > /tmp/hit.txt; then
-              echo "FAIL: $bin references iOS 16.3+ to_chars(float) symbol:"
-              cat /tmp/hit.txt
-              LEAK=1
+            # nm -m shows: "(undefined) weak external ... _symbol (from libc++)"
+            # or "(undefined) external ... _symbol (from libc++)". Strong
+            # references to to_chars(float/double/long double) would crash on
+            # iOS 16.1 at launch; weak ones resolve to NULL and are safe
+            # because fcitx5 never actually calls them.
+            strong=$(nm -m "$bin" 2>/dev/null | grep -E "to_chars.*[fdelm]NS_12chars_format|_ZNSt3__18to_charsEPcS0_[fde]" | grep -v "weak external" || true)
+            if [ -n "$strong" ]; then
+              echo "FAIL: $bin has STRONG references to iOS 16.3+ to_chars symbols:"
+              echo "$strong"
+              FAIL=1
             fi
           done < <(find "$APP" -type f -perm +111 ! -name "*.dylib" 2>/dev/null | xargs -I {} file {} | grep "Mach-O" | awk -F: '{print $1}')
-          if [ "$LEAK" = "1" ]; then
-            echo "dead-strip failed to remove unreachable float format templates — app would crash on iOS 16.1"
+          if [ "$FAIL" = "1" ]; then
+            echo "libc++ weak-link did not apply — app would crash on iOS 16.1"
             exit 1
           fi
-          echo "OK: no iOS 16.3+ to_chars symbols referenced in any Mach-O binary"
+          echo "OK: all to_chars symbols are either absent or weakly imported"
 
       - name: Install
         if: ${{ matrix.platform == 'SIMULATORARM64' }}
