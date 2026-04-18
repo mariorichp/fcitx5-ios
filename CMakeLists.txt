@@ -80,7 +80,7 @@ add_subdirectory(ipc)
 
 option(CHINESE_ADDONS "" ON)
 option(HALLELUJAH "" ON)
-option(MOZC "" ON)
+option(MOZC "" OFF)  # disabled: prebuilder libmozc (2026-04-16 re-upload) has protobuf gencode/runtime version mismatch. Re-enable once prebuilder is fixed. Japanese input only — not needed for Chinese-focused use.
 option(RIME "" ON)
 
 function(copy_to bundle cmd file relative_path)
