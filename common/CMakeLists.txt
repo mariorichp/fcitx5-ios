@@ -1,6 +1,7 @@
 add_library(FcitxCommon
     common.cpp
     inputmethod.cpp
+    libcxx_ios161_shim.cpp
 )
 target_include_directories(FcitxCommon PRIVATE
     "${PROJECT_SOURCE_DIR}/fcitx5/src/modules/notifications"

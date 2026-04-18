@@ -90,30 +90,38 @@ jobs:
         run: |
           ./scripts/check-validity.sh ${{ matrix.platform }}
 
-      - name: Verify iOS 16.3+ to_chars symbols are weak-imported
+      - name: Verify iOS 16.3+ libc++ symbols are handled
         if: ${{ matrix.platform == 'OS64' }}
         run: |
           set -e
           APP=build/OS64/src/Release-iphoneos/Fcitx5.app
           FAIL=0
           while IFS= read -r bin; do
-            # nm -m shows: "(undefined) weak external ... _symbol (from libc++)"
-            # or "(undefined) external ... _symbol (from libc++)". Strong
-            # references to to_chars(float/double/long double) would crash on
-            # iOS 16.1 at launch; weak ones resolve to NULL and are safe
-            # because fcitx5 never actually calls them.
-            strong=$(nm -m "$bin" 2>/dev/null | grep -E "to_chars.*[fdelm]NS_12chars_format|_ZNSt3__18to_charsEPcS0_[fde]" | grep -v "weak external" || true)
-            if [ -n "$strong" ]; then
+            # to_chars(float/double/long double) — iOS 16.3+ only. Must be
+            # weak-imported (never called at runtime) or absent.
+            strong_tc=$(nm -m "$bin" 2>/dev/null | grep -E "to_chars.*[fdelm]NS_12chars_format|_ZNSt3__18to_charsEPcS0_[fde]" | grep -v "weak external" || true)
+            if [ -n "$strong_tc" ]; then
               echo "FAIL: $bin has STRONG references to iOS 16.3+ to_chars symbols:"
-              echo "$strong"
+              echo "$strong_tc"
+              FAIL=1
+            fi
+            # __hash_memory — iOS 17+ only. Must be DEFINED LOCALLY by our
+            # shim (common/libcxx_ios161_shim.cpp), not imported from libc++.
+            # Otherwise every std::unordered_map<string,...> insert during
+            # static init jumps to NULL → SIGSEGV before main().
+            hm_import=$(nm -m "$bin" 2>/dev/null | grep "__ZNSt3__113__hash_memoryEPKvm" | grep "(undefined)" || true)
+            if [ -n "$hm_import" ]; then
+              echo "FAIL: $bin imports __hash_memory from libc++ (iOS 17+ only):"
+              echo "$hm_import"
+              echo "Shim common/libcxx_ios161_shim.cpp was not linked in."
               FAIL=1
             fi
           done < <(find "$APP" -type f -perm +111 ! -name "*.dylib" 2>/dev/null | xargs -I {} file {} | grep "Mach-O" | awk -F: '{print $1}')
           if [ "$FAIL" = "1" ]; then
-            echo "libc++ weak-link did not apply — app would crash on iOS 16.1"
+            echo "iOS 16.1 compatibility check failed — app would crash on device"
             exit 1
           fi
-          echo "OK: all to_chars symbols are either absent or weakly imported"
+          echo "OK: no unhandled iOS 16.3+ libc++ symbols"
 
       - name: Install
         if: ${{ matrix.platform == 'SIMULATORARM64' }}
