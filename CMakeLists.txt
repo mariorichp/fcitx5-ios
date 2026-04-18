@@ -12,6 +12,14 @@ set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED YES) # Need it for AppGroup even 
 set(CMAKE_Swift_LANGUAGE_VERSION 6)
 set(CMAKE_CXX_STANDARD 20)
 
+# Xcode 26.4 SDK marks std::to_chars(float) as iOS 16.3+. libc++'s <format>
+# header eagerly instantiates float formatters from any std::vformat call
+# (even with integer args), so deployment target 16.1 + <format> = compile
+# error. Disabling libc++ availability annotations lets the templates
+# compile; the float code paths are instantiated but never reached because
+# fcitx5's translateDomain is only called with integer/string args.
+add_compile_definitions(_LIBCPP_DISABLE_AVAILABILITY)
+
 set(BUNDLE_IDENTIFIER "org.fcitx.Fcitx5")
 set(BUNDLE_NAME "Fcitx5")
 
