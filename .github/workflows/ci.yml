@@ -178,6 +178,26 @@ jobs:
           done
           echo "OK: all bundles signed with App Group entitlement"
 
+          # Verify CFBundlePackageType — missing XPC! marker on extensions
+          # makes third-party apps' keyboard picker filter them out on
+          # iOS 16.1 (system apps use a looser path, so the regression is
+          # not visible in Messages/Notes).
+          for ext in Chinese Hallelujah Rime; do
+            pt=$(/usr/libexec/PlistBuddy -c "Print :CFBundlePackageType" \
+                 "Fcitx5.app/PlugIns/${ext}.appex/Info.plist" 2>/dev/null || echo "MISSING")
+            if [ "$pt" != "XPC!" ]; then
+              echo "FAIL: ${ext}.appex CFBundlePackageType='${pt}', expected 'XPC!'"
+              exit 1
+            fi
+          done
+          app_pt=$(/usr/libexec/PlistBuddy -c "Print :CFBundlePackageType" \
+                   Fcitx5.app/Info.plist 2>/dev/null || echo "MISSING")
+          if [ "$app_pt" != "APPL" ]; then
+            echo "FAIL: Fcitx5.app CFBundlePackageType='${app_pt}', expected 'APPL'"
+            exit 1
+          fi
+          echo "OK: CFBundlePackageType correct on app and all extensions"
+
           mkdir Payload
           cp -r Fcitx5.app Payload
           zip -r Fcitx5.ipa Payload

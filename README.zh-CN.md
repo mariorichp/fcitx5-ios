@@ -32,7 +32,8 @@
 | `src/CMakeLists.txt` / `keyboard/CMakeLists.txt` | 把 shim 直接加到主 app 和每个键盘扩展的源码列表里，保证每个 binary 都有本地强定义 |
 | `scripts/generate-icons.sh`：`--minimum-deployment-target` 16.3 → 16.1 | actool 与部署目标对齐 |
 | `.github/workflows/ci.yml` | 加 `ios-16.1-rebase` 分支触发；加 Verify 步骤用 `nm` 检查所有 binary 里 `to_chars(float)` 是弱引用且 `__hash_memory` 是本地定义（防止这两个关键问题回归） |
-| `.github/workflows/ci.yml`：Pack IPA 前加 `codesign --force --sign -` | **关键修复**：CI 用 `CODE_SIGNING_ALLOWED=NO` 出来的 bundle 完全没签名，TrollStore 安装时的 ad-hoc 假签没有 baseline 可以读 App Group entitlement，于是 iOS 16.1 认为键盘扩展没 entitlement，**第三方 App（微信、咸鱼等）的键盘选择列表里不显示**（系统 App 如短信、备忘录走另一条较宽松的路径所以能用）。打包前用 `keyboard.entitlements` / `app.entitlements` 先 ad-hoc 签进每个 binary 的签名里，TrollStore 再签时就能继承到 App Group |
+| `.github/workflows/ci.yml`：Pack IPA 前加 `codesign --force --sign -` | CI 用 `CODE_SIGNING_ALLOWED=NO` 出来的 bundle 完全没签名。打包前用 `keyboard.entitlements` / `app.entitlements` 先 ad-hoc 签进每个 binary 的签名里，TrollStore 再签时 App Group 才能继承 |
+| **`keyboard/Info.plist.in`：加 `CFBundlePackageType = XPC!`**<br>**`cmake/MacOSXBundleInfo.plist.in`：加 `CFBundlePackageType = APPL`** | **关键修复（2026-04-19 第二轮）**：第三方 App（微信、咸鱼等）的键盘选择列表里看不到小企鹅输入法，而短信/备忘录却能用——对照 Hamster TrollStore 版本发现键盘扩展 plist 里必须有 `CFBundlePackageType = XPC!` 标记（iOS 的 XPC-based extension 标识），缺了这个，iOS 16.1 第三方 App 走的较严格的扩展枚举路径会直接把 bundle 过滤掉（系统 App 走较宽松路径仍然能看到）|
 
 ### 如何构建
 

@@ -14,6 +14,14 @@
   <string>@PROJECT_VERSION@</string>
   <key>CFBundleExecutable</key>
   <string>@keyboard@</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <!-- App extensions are XPC-based; without XPC! marker iOS 16.1's stricter
+       third-party keyboard enumeration path (used by WeChat/Xianyu/etc)
+       filters out the bundle. System apps use a looser path so they still
+       show the keyboard. -->
+  <key>CFBundlePackageType</key>
+  <string>XPC!</string>
   <key>NSExtension</key>
   <dict>
     <key>NSExtensionAttributes</key>
