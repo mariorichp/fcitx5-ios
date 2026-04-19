@@ -23,12 +23,12 @@
 namespace std {
 inline namespace __1 {
 
-__attribute__((visibility("default")))
-size_t __hash_memory(const void* key, size_t len) noexcept {
+__attribute__((visibility("default"))) size_t
+__hash_memory(const void *key, size_t len) noexcept {
     constexpr uint64_t m = 0xc6a4a7935bd1e995ULL;
     constexpr int r = 47;
     uint64_t h = len * m;
-    const uint8_t* data = static_cast<const uint8_t*>(key);
+    const uint8_t *data = static_cast<const uint8_t *>(key);
     while (len >= 8) {
         uint64_t k;
         std::memcpy(&k, data, 8);
@@ -41,14 +41,27 @@ size_t __hash_memory(const void* key, size_t len) noexcept {
         len -= 8;
     }
     switch (len) {
-        case 7: h ^= uint64_t(data[6]) << 48; [[fallthrough]];
-        case 6: h ^= uint64_t(data[5]) << 40; [[fallthrough]];
-        case 5: h ^= uint64_t(data[4]) << 32; [[fallthrough]];
-        case 4: h ^= uint64_t(data[3]) << 24; [[fallthrough]];
-        case 3: h ^= uint64_t(data[2]) << 16; [[fallthrough]];
-        case 2: h ^= uint64_t(data[1]) << 8;  [[fallthrough]];
-        case 1: h ^= uint64_t(data[0]);
-                h *= m;
+    case 7:
+        h ^= uint64_t(data[6]) << 48;
+        [[fallthrough]];
+    case 6:
+        h ^= uint64_t(data[5]) << 40;
+        [[fallthrough]];
+    case 5:
+        h ^= uint64_t(data[4]) << 32;
+        [[fallthrough]];
+    case 4:
+        h ^= uint64_t(data[3]) << 24;
+        [[fallthrough]];
+    case 3:
+        h ^= uint64_t(data[2]) << 16;
+        [[fallthrough]];
+    case 2:
+        h ^= uint64_t(data[1]) << 8;
+        [[fallthrough]];
+    case 1:
+        h ^= uint64_t(data[0]);
+        h *= m;
     }
     h ^= h >> r;
     h *= m;
