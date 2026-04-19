@@ -32,6 +32,7 @@
 | `src/CMakeLists.txt` / `keyboard/CMakeLists.txt` | 把 shim 直接加到主 app 和每个键盘扩展的源码列表里，保证每个 binary 都有本地强定义 |
 | `scripts/generate-icons.sh`：`--minimum-deployment-target` 16.3 → 16.1 | actool 与部署目标对齐 |
 | `.github/workflows/ci.yml` | 加 `ios-16.1-rebase` 分支触发；加 Verify 步骤用 `nm` 检查所有 binary 里 `to_chars(float)` 是弱引用且 `__hash_memory` 是本地定义（防止这两个关键问题回归） |
+| `.github/workflows/ci.yml`：Pack IPA 前加 `codesign --force --sign -` | **关键修复**：CI 用 `CODE_SIGNING_ALLOWED=NO` 出来的 bundle 完全没签名，TrollStore 安装时的 ad-hoc 假签没有 baseline 可以读 App Group entitlement，于是 iOS 16.1 认为键盘扩展没 entitlement，**第三方 App（微信、咸鱼等）的键盘选择列表里不显示**（系统 App 如短信、备忘录走另一条较宽松的路径所以能用）。打包前用 `keyboard.entitlements` / `app.entitlements` 先 ad-hoc 签进每个 binary 的签名里，TrollStore 再签时就能继承到 App Group |
 
 ### 如何构建
 

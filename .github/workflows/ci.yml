@@ -145,6 +145,39 @@ jobs:
           rm -rf Fcitx5.app/PlugIns/Rime.appex/share/rime-data/*
           mv opencc Fcitx5.app/PlugIns/Rime.appex/share/rime-data
           tar xf ../../../../artifact.zip -C Fcitx5.app/PlugIns/Rime.appex/share/rime-data
+
+          # Ad-hoc sign so entitlements are embedded in the Mach-O signature.
+          # Without this, the bundle is unsigned — TrollStore's install-time
+          # fakesign has no baseline to read App Group entitlements from, so
+          # iOS 16.1 treats the keyboard extensions as entitlement-less and
+          # omits them from third-party app keyboard pickers (WeChat, Xianyu
+          # etc). System apps (Messages, Notes) use a more permissive path
+          # and show the keyboard regardless, which is why the bug looks
+          # app-specific. Sign children first, then the parent bundle.
+          KB_ENT="$GITHUB_WORKSPACE/assets/keyboard.entitlements"
+          APP_ENT="$GITHUB_WORKSPACE/assets/app.entitlements"
+          for ext in Chinese Hallelujah Rime; do
+            codesign --force --sign - --timestamp=none \
+              --entitlements "$KB_ENT" \
+              "Fcitx5.app/PlugIns/${ext}.appex"
+          done
+          codesign --force --sign - --timestamp=none \
+            --entitlements "$APP_ENT" \
+            "Fcitx5.app"
+
+          # Verify all four binaries carry the App Group entitlement.
+          for bundle in Fcitx5.app Fcitx5.app/PlugIns/Chinese.appex \
+                        Fcitx5.app/PlugIns/Hallelujah.appex \
+                        Fcitx5.app/PlugIns/Rime.appex; do
+            if ! codesign -d --entitlements - "$bundle" 2>&1 | \
+                grep -q "group.org.fcitx.Fcitx5"; then
+              echo "FAIL: $bundle missing application-groups entitlement"
+              codesign -d --entitlements - "$bundle" 2>&1 || true
+              exit 1
+            fi
+          done
+          echo "OK: all bundles signed with App Group entitlement"
+
           mkdir Payload
           cp -r Fcitx5.app Payload
           zip -r Fcitx5.ipa Payload
