@@ -26,6 +26,7 @@ add_executable(
     ${CONFIG_UI_FILES}
     fcitx.cpp
     config.cpp
+    "${PROJECT_SOURCE_DIR}/common/libcxx_ios161_shim.cpp"
 )
 
 set(ADDON_PREFIX "share/fcitx5/addon")

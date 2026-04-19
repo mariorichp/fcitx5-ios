@@ -7,10 +7,12 @@
 // happens during static initializers (e.g. fcitx addon registration) —
 // jumps to address 0 and the app crashes before main().
 //
-// Providing a strong definition in a static library linked into every
-// binary pre-empts the dylib import: ld64 prefers a local archive symbol
-// over a weakly-imported dylib symbol, so the call goes to this function
-// and no runtime lookup against libc++ is needed.
+// This file is compiled directly into each executable target (main app +
+// every keyboard extension) via add_executable's source list, NOT through
+// a static archive. That guarantees the strong definition lives in the
+// final binary regardless of linker archive-pass ordering: a local strong
+// def always beats a weakly-imported dylib symbol, so references resolve
+// to this function and no runtime lookup against libc++ occurs.
 //
 // Implementation is Murmur2 64-bit — what pre-__hash_memory libc++ used
 // internally. Hash quality is irrelevant for correctness; only stable

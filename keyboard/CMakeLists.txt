@@ -17,6 +17,7 @@ function(add_keyboard_extension keyboard language targets)
         "${PROJECT_SOURCE_DIR}/keyboard/SyncConfig.swift"
         "${PROJECT_SOURCE_DIR}/keyboard/fcitx.cpp"
         "${PROJECT_SOURCE_DIR}/keyboard/keycode.cpp"
+        "${PROJECT_SOURCE_DIR}/common/libcxx_ios161_shim.cpp"
     )
 
     configure_file("${PROJECT_SOURCE_DIR}/keyboard/Info.plist.in" "${PROJECT_BINARY_DIR}/${keyboard}.plist" @ONLY)
